@@ -1,0 +1,50 @@
+feature,area,priority,original,clone,notes
+Onboarding con cuestionario (objetivo sexo edad altura peso actividad ritmo),onboarding,must,yes,yes,S02
+Cálculo de kcal y macros (Mifflin-St Jeor + TDEE + ajuste por objetivo),metas,must,yes,yes,S03; fórmula pública
+Sign in with Apple y email,cuenta,must,yes,no,S04; v0.1 es solo local sin cuenta; llega con el backend
+Diario del día con anillo kcal y barras de macros,diario,must,yes,yes,S06
+Comidas por día configurables (4 en gratis),diario,must,yes,yes,3 a 5 comidas; sin límite gratis (todo premium)
+Búsqueda en base de datos de alimentos,registro,must,yes,partial,S07; BEDCA (957 con CSV) + 118 genéricos; falta OFF online
+Detalle de alimento con porciones y unidades,registro,must,yes,yes,S08
+Escáner de código de barras,registro,must,yes,no,S12; VisionKit DataScanner + Open Food Facts
+Registro por texto libre parseado,registro,must,yes,no,S11; LLM o parser local
+Crear alimento y receta propios,registro,must,yes,partial,S13; alimentos sí; recetas pendientes
+Recientes y favoritos,registro,must,yes,yes,
+Registro de peso y gráfico,progreso,must,yes,yes,S18 S19; Swift Charts
+Registro de agua con meta,diario,must,yes,yes,S27
+Paywall y suscripción StoreKit 2,monetización,must,yes,skip,quitado a petición del usuario: todo desbloqueado (modo premium)
+Persistencia local offline,plataforma,must,yes,yes,SwiftData
+Recordatorios (comidas agua peso),notificaciones,must,yes,no,local notifications
+Registro por foto con IA,registro,should,yes,yes,S09; Gemini Flash nivel gratuito con clave propia (BYOK) + cruce con BEDCA + revisión obligatoria
+Registro por voz,registro,should,yes,no,S10; Premium; Speech framework + parser
+Plan de comidas automático,plan,should,yes,no,S14; Premium; generador propio
+Intercambiar comida del plan,plan,should,yes,no,S16
+Detalle de receta escalada a tu porción,plan,should,yes,no,S15
+Lista de compras desde el plan,plan,should,yes,no,S17
+Metas de macros personalizadas y tipos de dieta,metas,should,yes,partial,S25; 5 tipos de dieta; falta editar gramos a mano
+Ajuste dinámico de kcal según progreso de peso,metas,should,yes,no,
+Medidas corporales y % grasa estimado,progreso,should,yes,no,S19; fórmula US Navy
+Fotos de progreso y comparador,progreso,should,yes,no,S20
+Historial de nutrientes (gráficos),progreso,should,yes,partial,S18; calorías 14 días; faltan macros y micros
+Apple Health (leer kcal activas pasos entrenos; escribir peso y nutrición),integraciones,should,yes,no,S26; HealthKit
+Coach IA (chat con contexto del día),coach,should,yes,no,S21; LLM vía backend
+Ayuno intermitente con temporizador,ayuno,should,yes,no,S22
+Widgets (kcal macros agua ayuno racha),plataforma,should,yes,no,WidgetKit
+Live Activity de ayuno,plataforma,should,yes,no,ActivityKit
+Sync en la nube entre dispositivos,plataforma,should,yes,no,Supabase o CloudKit
+Puntuación nutricional del alimento y del día,coach,could,yes,no,
+Comparar alimentos,registro,could,yes,no,
+Exportar historial (CSV/PDF),cuenta,could,yes,no,
+Exportar plan a PDF,plan,could,yes,no,
+Compartir comida o día con otro usuario,social,could,yes,no,
+Plan compartido familiar con porciones individuales,plan,could,yes,no,
+Medicamentos y suplementos,diario,could,yes,no,S28; añadido en v25
+Coach sugiere comidas con lo que tienes en casa,coach,could,yes,no,
+Referidos y códigos promocionales,monetización,could,yes,skip,sin pagos no aplica
+Teams retos y chat de grupo,social,could,yes,no,S23; requiere moderación
+Base de datos propia de 10M alimentos verificados,datos,could,yes,skip,es el activo de Fitia; se usa OFF + USDA + alimentos de usuario
+Recetas de Fitia (20.000+),datos,could,yes,skip,contenido con copyright; crear recetas propias
+Integraciones directas Strava Garmin Oura WHOOP Fitbit,integraciones,could,yes,skip,acuerdos de partner; cubierto vía HealthKit
+App de Apple Watch,plataforma,could,yes,skip,fuera de la v1
+App visionOS,plataforma,could,yes,skip,fuera de la v1
+App Android y web,plataforma,could,yes,skip,el objetivo es iOS nativo

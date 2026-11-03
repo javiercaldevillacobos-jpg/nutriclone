@@ -1,0 +1,71 @@
+name: NutriClone
+
+options:
+  bundleIdPrefix: com.nutriclone
+  developmentLanguage: es
+  deploymentTarget:
+    iOS: "18.0"
+  createIntermediateGroups: true
+
+settings:
+  base:
+    SWIFT_VERSION: "5.0"
+    MARKETING_VERSION: "0.1.0"
+    CURRENT_PROJECT_VERSION: "1"
+    # Tu amigo pone aquí su Team ID, o lo elige en Xcode > Signing & Capabilities.
+    DEVELOPMENT_TEAM: ""
+    CODE_SIGN_STYLE: Automatic
+
+targets:
+  NutriClone:
+    type: application
+    platform: iOS
+    sources:
+      - path: App
+      - path: Core
+      - path: DesignSystem
+      - path: Features
+      - path: Resources
+    info:
+      path: Supporting/Info.plist
+      properties:
+        CFBundleDisplayName: NutriClone
+        CFBundleDevelopmentRegion: es
+        UILaunchScreen: {}
+        UIApplicationSceneManifest:
+          UIApplicationSupportsMultipleScenes: false
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+        # Permite 120 Hz (ProMotion) en el iPhone 16 Pro.
+        CADisableMinimumFrameDurationOnPhone: true
+        NSCameraUsageDescription: "Para hacer una foto de tu plato y reconocer los alimentos con Gemini."
+    settings:
+      base:
+        # Si Xcode dice que el identificador ya existe, cambia esto por algo único,
+        # por ejemplo com.tunombre.nutriclone
+        PRODUCT_BUNDLE_IDENTIFIER: com.nutriclone.app
+        TARGETED_DEVICE_FAMILY: "1"
+
+  NutriCloneTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - path: Tests
+    dependencies:
+      - target: NutriClone
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+        PRODUCT_BUNDLE_IDENTIFIER: com.nutriclone.app.tests
+
+schemes:
+  NutriClone:
+    build:
+      targets:
+        NutriClone: all
+    run:
+      config: Debug
+    test:
+      config: Debug
+      targets:
+        - NutriCloneTests
