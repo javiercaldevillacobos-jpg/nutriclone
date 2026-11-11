@@ -166,6 +166,17 @@ struct FoodDetailView: View {
                     Text("Valores por 100 g de porción comestible. Energía convertida a kcal cuando BEDCA la da en kJ.")
                 }
             }
+
+            if food.source == .openFoodFacts {
+                Section {
+                    Link(destination: OpenFoodFactsService.websiteURL) {
+                        Label("Fuente: Open Food Facts (licencia ODbL)", systemImage: "barcode")
+                            .font(.footnote)
+                    }
+                } footer: {
+                    Text("Datos aportados por la comunidad. Si no coinciden con la etiqueta, crea el alimento a mano.")
+                }
+            }
         }
         .navigationTitle("Detalle")
         .navigationBarTitleDisplayMode(.inline)

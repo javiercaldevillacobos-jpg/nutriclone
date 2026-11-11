@@ -70,6 +70,15 @@ struct ProfileView: View {
                                 .foregroundStyle(.secondary)
                         }
                     }
+                    Link(destination: OpenFoodFactsService.websiteURL) {
+                        VStack(alignment: .leading, spacing: DS.Spacing.xs) {
+                            Text("Open Food Facts")
+                                .font(.headline)
+                            Text("Productos envasados por código de barras. Base de datos abierta y colaborativa, licencia ODbL.")
+                                .font(.footnote)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
                     VStack(alignment: .leading, spacing: DS.Spacing.xs) {
                         Text("USDA FoodData Central")
                             .font(.headline)

@@ -1,35 +1,78 @@
 import SwiftUI
 import SwiftData
 
-/// S13: crear un alimento propio a partir de la etiqueta nutricional.
+/// Datos de un alimento antes de guardarlo: vacío, con un nombre, o rellenado desde Open Food Facts.
+struct FoodDraft {
+    var name = ""
+    var brand = ""
+    var barcode: String?
+    var source: FoodSource = .user
+    var kcal: Double?
+    var protein: Double?
+    var carbs: Double?
+    var fat: Double?
+    var fiber: Double?
+    var sugar: Double?
+    var saturatedFat: Double?
+    var sodiumMg: Double?
+    var servingLabel = ""
+    var servingGrams: Double?
+}
+
+extension FoodDraft {
+    init(product: OFFProduct) {
+        self.init(
+            name: product.name ?? "",
+            brand: product.brand ?? "",
+            barcode: product.barcode,
+            source: .openFoodFacts,
+            kcal: product.kcal.map { ($0 * 10).rounded() / 10 },
+            protein: product.protein,
+            carbs: product.carbs,
+            fat: product.fat,
+            fiber: product.fiber,
+            sugar: product.sugar,
+            saturatedFat: product.saturatedFat,
+            sodiumMg: product.sodiumMg,
+            servingLabel: product.servingLabel ?? "",
+            servingGrams: product.servingGrams
+        )
+    }
+}
+
+/// S13: crear un alimento a partir de la etiqueta nutricional. También sirve para revisar
+/// un producto escaneado antes de guardarlo.
 struct CreateFoodView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var context
 
-    @State private var name: String
-    @State private var brand = ""
-    @State private var kcal: Double?
-    @State private var protein: Double?
-    @State private var carbs: Double?
-    @State private var fat: Double?
-    @State private var servingLabel = ""
-    @State private var servingGrams: Double?
+    @State private var draft: FoodDraft
+    private let notice: String?
+    private let onSaved: ((Food) -> Void)?
 
     init(initialName: String = "") {
-        _name = State(initialValue: initialName)
+        _draft = State(initialValue: FoodDraft(name: initialName))
+        notice = nil
+        onSaved = nil
     }
 
-    private var trimmedName: String { name.trimmingCharacters(in: .whitespacesAndNewlines) }
+    init(draft: FoodDraft, notice: String? = nil, onSaved: ((Food) -> Void)? = nil) {
+        _draft = State(initialValue: draft)
+        self.notice = notice
+        self.onSaved = onSaved
+    }
+
+    private var trimmedName: String { draft.name.trimmingCharacters(in: .whitespacesAndNewlines) }
 
     private var canSave: Bool {
-        !trimmedName.isEmpty && (kcal ?? -1) >= 0
-            && [protein, carbs, fat].allSatisfy { ($0 ?? 0) >= 0 }
+        !trimmedName.isEmpty && (draft.kcal ?? -1) >= 0
+            && [draft.protein, draft.carbs, draft.fat].allSatisfy { ($0 ?? 0) >= 0 }
     }
 
     /// Aviso si los macros no cuadran con las calorías (más de un 20 % de diferencia).
     private var mismatchWarning: String? {
-        guard let kcal, kcal > 0 else { return nil }
-        let fromMacros = (protein ?? 0) * 4 + (carbs ?? 0) * 4 + (fat ?? 0) * 9
+        guard let kcal = draft.kcal, kcal > 0 else { return nil }
+        let fromMacros = (draft.protein ?? 0) * 4 + (draft.carbs ?? 0) * 4 + (draft.fat ?? 0) * 9
         guard fromMacros > 0, abs(fromMacros - kcal) / kcal > 0.2 else { return nil }
         return "Con esos macros saldrían unas \(Int(fromMacros.rounded())) kcal. Revisa la etiqueta."
     }
@@ -37,15 +80,28 @@ struct CreateFoodView: View {
     var body: some View {
         NavigationStack {
             Form {
-                Section {
-                    TextField("Nombre", text: $name)
-                    TextField("Marca (opcional)", text: $brand)
+                if let notice {
+                    Section {
+                        Label(notice, systemImage: draft.source == .openFoodFacts ? "checkmark.circle" : "info.circle")
+                            .font(.subheadline)
+                    }
                 }
                 Section {
-                    numberField("Calorías", value: $kcal, unit: "kcal")
-                    numberField("Proteína", value: $protein, unit: "g")
-                    numberField("Carbohidratos", value: $carbs, unit: "g")
-                    numberField("Grasa", value: $fat, unit: "g")
+                    TextField("Nombre", text: $draft.name)
+                    TextField("Marca (opcional)", text: $draft.brand)
+                    if let barcode = draft.barcode {
+                        LabeledContent("Código", value: barcode)
+                            .monospacedDigit()
+                    }
+                }
+                Section {
+                    numberField("Calorías", value: $draft.kcal, unit: "kcal")
+                    numberField("Proteína", value: $draft.protein, unit: "g")
+                    numberField("Carbohidratos", value: $draft.carbs, unit: "g")
+                    numberField("de los cuales azúcares", value: $draft.sugar, unit: "g")
+                    numberField("Grasa", value: $draft.fat, unit: "g")
+                    numberField("de la cual saturada", value: $draft.saturatedFat, unit: "g")
+                    numberField("Fibra", value: $draft.fiber, unit: "g")
                 } header: {
                     Text("Por 100 g o 100 ml")
                 } footer: {
@@ -54,13 +110,17 @@ struct CreateFoodView: View {
                     }
                 }
                 Section {
-                    TextField("Nombre de la ración, p. ej. 1 tarrina", text: $servingLabel)
-                    numberField("Peso de la ración", value: $servingGrams, unit: "g")
+                    TextField("Nombre de la ración, p. ej. 1 tarrina", text: $draft.servingLabel)
+                    numberField("Peso de la ración", value: $draft.servingGrams, unit: "g")
                 } header: {
                     Text("Ración (opcional)")
+                } footer: {
+                    if draft.source == .openFoodFacts {
+                        Text("Datos de Open Food Facts, base de datos colaborativa (licencia ODbL). Compruébalos con la etiqueta.")
+                    }
                 }
             }
-            .navigationTitle("Nuevo alimento")
+            .navigationTitle(draft.barcode == nil ? "Nuevo alimento" : "Revisa el producto")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -86,22 +146,29 @@ struct CreateFoodView: View {
     }
 
     private func save() {
-        let label = servingLabel.trimmingCharacters(in: .whitespacesAndNewlines)
-        let hasServing = !label.isEmpty && (servingGrams ?? 0) > 0
+        let label = draft.servingLabel.trimmingCharacters(in: .whitespacesAndNewlines)
+        let hasServing = !label.isEmpty && (draft.servingGrams ?? 0) > 0
+        let brand = draft.brand.trimmingCharacters(in: .whitespacesAndNewlines)
         let food = Food(
             name: trimmedName,
             brand: brand.isEmpty ? nil : brand,
-            source: .user,
-            kcal: kcal ?? 0,
-            protein: protein ?? 0,
-            carbs: carbs ?? 0,
-            fat: fat ?? 0,
+            barcode: draft.barcode,
+            source: draft.source,
+            kcal: draft.kcal ?? 0,
+            protein: draft.protein ?? 0,
+            carbs: draft.carbs ?? 0,
+            fat: draft.fat ?? 0,
+            fiber: draft.fiber,
+            sugar: draft.sugar,
             servingLabel: hasServing ? label : nil,
-            servingGrams: hasServing ? servingGrams : nil
+            servingGrams: hasServing ? draft.servingGrams : nil
         )
+        food.saturatedFat = draft.saturatedFat
+        food.sodiumMg = draft.sodiumMg
         food.lastUsedAt = .now
         context.insert(food)
         try? context.save()
+        onSaved?(food)
         dismiss()
     }
 }

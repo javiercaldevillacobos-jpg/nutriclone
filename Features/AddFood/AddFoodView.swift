@@ -12,6 +12,22 @@ struct AddFoodView: View {
     @State private var query = ""
     @State private var creating = false
     @State private var scanning = false
+    @State private var path: [Food] = []
+
+    // Código de barras
+    @State private var scanningBarcode = false
+    @State private var scannedCode: String?
+    @State private var lookingUp = false
+    @State private var barcodeReview: BarcodeReview?
+    @State private var barcodeError: OpenFoodFactsError?
+    @State private var failedCode: String?
+    @State private var savedFood: Food?
+
+    private struct BarcodeReview: Identifiable {
+        let id = UUID()
+        let draft: FoodDraft
+        let notice: String
+    }
 
     private var normalizedQuery: String { Food.normalize(query) }
 
@@ -29,7 +45,7 @@ struct AddFoodView: View {
     private var mine: [Food] { foods.filter { $0.source == .user } }
 
     var body: some View {
-        NavigationStack {
+        NavigationStack(path: $path) {
             List {
                 if normalizedQuery.isEmpty {
                     browseSections
@@ -80,12 +96,107 @@ struct AddFoodView: View {
             .dishScanFlow(isActive: $scanning, meal: meal, day: day, mealsPerDay: mealsPerDay) {
                 dismiss()
             }
+            .sheet(isPresented: $scanningBarcode, onDismiss: {
+                if let code = scannedCode {
+                    scannedCode = nil
+                    lookUp(code)
+                }
+            }) {
+                BarcodeScannerSheet { scannedCode = $0 }
+            }
+            .sheet(item: $barcodeReview, onDismiss: {
+                if let food = savedFood {
+                    savedFood = nil
+                    path.append(food)
+                }
+            }) { review in
+                CreateFoodView(draft: review.draft, notice: review.notice) { savedFood = $0 }
+            }
+            .alert("No se pudo buscar el producto",
+                   isPresented: Binding(get: { barcodeError != nil }, set: { if !$0 { barcodeError = nil } }),
+                   presenting: barcodeError) { _ in
+                Button("Reintentar") {
+                    if let code = failedCode { lookUp(code) }
+                }
+                Button("Introducir a mano") {
+                    if let code = failedCode {
+                        barcodeReview = BarcodeReview(draft: FoodDraft(barcode: code),
+                                                      notice: "Copia los valores de la etiqueta del envase.")
+                    }
+                }
+                Button("Cancelar", role: .cancel) {}
+            } message: { error in
+                Text(error.errorDescription ?? "")
+            }
+            .overlay {
+                if lookingUp {
+                    VStack(spacing: DS.Spacing.m) {
+                        SwiftUI.ProgressView().controlSize(.large)
+                        Text("Buscando el producto…").font(.headline)
+                    }
+                    .padding(DS.Spacing.xxl)
+                    .background(.regularMaterial, in: RoundedRectangle(cornerRadius: DS.Radius.l))
+                }
+            }
+        }
+    }
+
+    /// Busca un código: primero en el catálogo local y si no, en Open Food Facts.
+    private func lookUp(_ code: String) {
+        if let known = foods.first(where: { $0.barcode == code }) {
+            path.append(known)
+            return
+        }
+        lookingUp = true
+        Task {
+            do {
+                let product = try await OpenFoodFactsService.shared.product(barcode: code)
+                lookingUp = false
+                if let product {
+                    barcodeReview = BarcodeReview(
+                        draft: FoodDraft(product: product),
+                        notice: product.isComplete
+                            ? "Encontrado en Open Food Facts. Revisa que coincida con la etiqueta y guarda."
+                            : "Encontrado en Open Food Facts, pero le faltan datos. Complétalos con la etiqueta."
+                    )
+                } else {
+                    barcodeReview = BarcodeReview(
+                        draft: FoodDraft(barcode: code),
+                        notice: "Este producto aún no está en Open Food Facts. Copia la etiqueta una vez y la próxima vez lo reconocerá."
+                    )
+                }
+            } catch let error as OpenFoodFactsError {
+                lookingUp = false
+                failedCode = code
+                barcodeError = error
+            } catch {
+                lookingUp = false
+                failedCode = code
+                barcodeError = .network(error.localizedDescription)
+            }
         }
     }
 
     @ViewBuilder
     private var browseSections: some View {
         Section {
+            Button {
+                scanningBarcode = true
+            } label: {
+                Label {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Escanear código de barras").font(.headline)
+                        Text("Productos envasados, con Open Food Facts")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                } icon: {
+                    Image(systemName: "barcode.viewfinder")
+                        .font(.title2)
+                        .foregroundStyle(Color.brand)
+                }
+            }
+            .foregroundStyle(Color.primary)
             Button {
                 scanning = true
             } label: {

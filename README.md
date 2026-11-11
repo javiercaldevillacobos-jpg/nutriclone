@@ -61,8 +61,9 @@ a quien hizo el código. No hace falta tocar nada más.
 - Perfil con cambio de objetivo y recálculo de metas.
 
 - Escáner de platos con foto (Gemini, nivel gratuito, con tu propia clave). Ver abajo.
+- Escáner de códigos de barras de productos envasados (Open Food Facts). Ver abajo.
 
-Pendiente (siguientes hitos): escáner de código de barras, registro por texto y voz,
+Pendiente (siguientes hitos): registro por texto y voz,
 planes de comidas y lista de compras, medidas y fotos de progreso, ayuno, Apple Health,
 widgets, coach y sincronización en la nube.
 
@@ -138,6 +139,23 @@ solo fotos de comida. La foto se reduce a 1024 px antes de enviarla y la clave v
 `x-goog-api-key`, nunca en la URL.
 
 La cámara solo funciona en un iPhone real; en el simulador usa "Elegir de la galería".
+
+## Escáner de códigos de barras
+
+En *Añadir alimento* > **Escanear código de barras**:
+
+1. El lector de VisionKit reconoce EAN-13, EAN-8 y UPC en el iPhone (sin enviar la imagen a ningún sitio).
+   Se descartan lecturas con el dígito de control incorrecto.
+2. Si el producto ya está en tu catálogo, se abre directamente.
+3. Si no, se busca en **Open Food Facts** (https://world.openfoodfacts.org, gratis y sin clave) y se
+   muestra para revisarlo con la etiqueta antes de guardarlo. Si no existe o le faltan datos, se abre
+   el formulario con el código puesto para copiar la etiqueta: la próxima vez lo reconoce.
+
+En el **simulador no hay cámara**: aparece un campo para escribir el número del código (por ejemplo
+`8480000610218` o `3017624010701`) y así se puede probar todo el flujo. Linterna disponible en iPhone.
+
+Open Food Facts es una base colaborativa con licencia ODbL: la app la cita en el detalle del producto
+y en Perfil > Fuentes de datos. Los datos pueden tener errores; revísalos con el envase.
 
 ## Estructura
 

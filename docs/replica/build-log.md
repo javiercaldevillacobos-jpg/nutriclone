@@ -53,3 +53,16 @@ CSV incluido en Resources (955 alimentos cargables de 957; 3,3 % con kcal y macr
 
 Desviaciones del encargo: clave en cabecera `x-goog-api-key` en vez de `?key=` (la documentación actual usa la cabecera y así no queda en la URL); sin `responseJsonSchema` (solo `responseMimeType`) porque la referencia actual no lo confirma de forma literal y un campo erróneo daría 400.
 No probado contra la API real (no hay clave ni dispositivo aquí). Riesgo: nombres de modelo o campos camelCase si Google los cambia.
+
+## v0.4 · 2026-11-11 · Código de barras
+
+| pieza | estado | notas |
+| --- | --- | --- |
+| S12 lector | hecho | VisionKit DataScannerViewController (EAN-13, EAN-8, UPC-E), linterna, entrada manual si no hay cámara o permiso |
+| Barcode | hecho | dígito de control GTIN, UPC-E → UPC-A, UPC-A → EAN-13 |
+| OpenFoodFactsService | hecho | API v2 sin clave, User-Agent propio, kcal o kJ, números como texto, 404/status 0 = no encontrado |
+| Revisión | hecho | CreateFoodView reutilizado con datos precargados; guarda con código y abre el detalle para elegir ración |
+| Atribución | hecho | Open Food Facts (ODbL) en detalle y Perfil |
+| Tests | hecho | códigos, parser con respuestas reales, petición, 404, sin red |
+
+No probado en dispositivo: el lector solo funciona en iPhone real.

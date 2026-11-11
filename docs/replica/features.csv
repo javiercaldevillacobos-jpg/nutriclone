@@ -6,7 +6,7 @@ Diario del día con anillo kcal y barras de macros,diario,must,yes,yes,S06
 Comidas por día configurables (4 en gratis),diario,must,yes,yes,3 a 5 comidas; sin límite gratis (todo premium)
 Búsqueda en base de datos de alimentos,registro,must,yes,partial,S07; BEDCA (957 con CSV) + 118 genéricos; falta OFF online
 Detalle de alimento con porciones y unidades,registro,must,yes,yes,S08
-Escáner de código de barras,registro,must,yes,no,S12; VisionKit DataScanner + Open Food Facts
+Escáner de código de barras,registro,must,yes,yes,S12; VisionKit DataScanner + Open Food Facts + entrada manual (simulador)
 Registro por texto libre parseado,registro,must,yes,no,S11; LLM o parser local
 Crear alimento y receta propios,registro,must,yes,partial,S13; alimentos sí; recetas pendientes
 Recientes y favoritos,registro,must,yes,yes,
