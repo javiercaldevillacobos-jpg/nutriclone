@@ -1,0 +1,129 @@
+# Compila NutriClone en un Mac de GitHub y publica un .ipa SIN FIRMAR para instalarlo con AltStore,
+# que lo firma con tu propio Apple ID. El .ipa queda en la release "latest" del repositorio:
+# https://github.com/javiercaldevillacobos-jpg/nutriclone/releases/tag/latest
+name: Build IPA
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "App/**"
+      - "Core/**"
+      - "DesignSystem/**"
+      - "Features/**"
+      - "Resources/**"
+      - "project.yml"
+      - ".github/workflows/build-ipa.yml"
+  workflow_dispatch:
+    inputs:
+      run_tests:
+        description: "Ejecutar también los tests en el simulador (gasta más minutos)"
+        type: boolean
+        default: false
+
+# Si llegan dos cambios seguidos, solo se compila el último.
+concurrency:
+  group: build-ipa
+  cancel-in-progress: true
+
+permissions:
+  contents: write   # para crear/actualizar la release "latest"
+
+jobs:
+  build:
+    runs-on: macos-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Usar la última versión estable de Xcode del runner
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest-stable
+
+      - name: Generar el proyecto con XcodeGen
+        run: |
+          brew install xcodegen
+          xcodegen generate
+
+      - name: Compilar para iPhone (sin firma)
+        run: |
+          STATUS=0
+          xcodebuild \
+            -project NutriClone.xcodeproj \
+            -scheme NutriClone \
+            -configuration Release \
+            -destination 'generic/platform=iOS' \
+            -derivedDataPath build \
+            CURRENT_PROJECT_VERSION=${{ github.run_number }} \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            build > build.log 2>&1 || STATUS=$?
+          # Resumen legible: errores del compilador y resultado final.
+          grep -E "error:|BUILD (SUCCEEDED|FAILED)" build.log || tail -50 build.log
+          exit $STATUS
+
+      - name: Empaquetar el .ipa
+        run: |
+          rm -rf Payload NutriClone.ipa
+          mkdir Payload
+          cp -R build/Build/Products/Release-iphoneos/NutriClone.app Payload/
+          zip -qry NutriClone.ipa Payload
+          ls -lh NutriClone.ipa
+
+      - name: Guardar el log de compilación si falla
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-log
+          path: build.log
+          retention-days: 7
+
+      - name: Publicar en la release "latest"
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          NOTES="Compilación ${{ github.run_number }} del commit ${GITHUB_SHA::7} ($(date -u '+%Y-%m-%d %H:%M UTC')).
+
+          .ipa sin firmar: instálalo con AltStore (My Apps > +). Se instala encima de la versión anterior sin perder datos."
+          gh release delete latest --yes --cleanup-tag 2>/dev/null || true
+          gh release create latest NutriClone.ipa \
+            --title "NutriClone (build ${{ github.run_number }})" \
+            --notes "$NOTES" \
+            --prerelease \
+            --target "$GITHUB_SHA"
+
+  test:
+    if: github.event_name == 'workflow_dispatch' && inputs.run_tests
+    runs-on: macos-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest-stable
+      - name: Generar el proyecto
+        run: |
+          brew install xcodegen
+          xcodegen generate
+      - name: Tests en un simulador de iPhone
+        run: |
+          SIM=$(xcrun simctl list devices available | grep -oE "iPhone 1[6-9] Pro \(" | head -1 | sed 's/ ($//')
+          SIM=${SIM:-iPhone 16 Pro}
+          echo "Simulador: $SIM"
+          STATUS=0
+          xcodebuild test \
+            -project NutriClone.xcodeproj \
+            -scheme NutriClone \
+            -destination "platform=iOS Simulator,name=$SIM" \
+            CODE_SIGNING_ALLOWED=NO > test.log 2>&1 || STATUS=$?
+          grep -E "error:|✘|Test run|TEST (SUCCEEDED|FAILED)" test.log || tail -50 test.log
+          exit $STATUS
+      - name: Guardar el log de tests
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-log
+          path: test.log
+          retention-days: 7

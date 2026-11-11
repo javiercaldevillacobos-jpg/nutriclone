@@ -157,10 +157,37 @@ En el **simulador no hay cámara**: aparece un campo para escribir el número de
 Open Food Facts es una base colaborativa con licencia ODbL: la app la cita en el detalle del producto
 y en Perfil > Fuentes de datos. Los datos pueden tener errores; revísalos con el envase.
 
+## Instalar en el iPhone sin Mac: GitHub + AltStore
+
+Cada vez que se sube un cambio de código a `main`, GitHub compila la app en un Mac en la nube
+(workflow `.github/workflows/build-ipa.yml`) y deja el archivo **NutriClone.ipa** (sin firmar) en:
+
+https://github.com/javiercaldevillacobos-jpg/nutriclone/releases/tag/latest
+
+AltStore lo firma con tu Apple ID y lo renueva solo cada semana desde tu PC con Windows.
+
+1. Prepara AltServer en el PC e instala AltStore en el iPhone (guía oficial:
+   https://faq.altstore.io/altstore-classic/how-to-install-altstore-windows.md).
+2. En el iPhone, abre el enlace de arriba en Safari (con tu sesión de GitHub iniciada), toca
+   `NutriClone.ipa` y guárdalo en Archivos.
+3. AltStore > **My Apps** > **+** > elige `NutriClone.ipa`. Para actualizar, lo mismo con el nuevo:
+   se instala encima sin perder datos.
+4. Deja AltServer abierto en el PC: con el iPhone en la misma wifi, AltStore renueva la firma antes de
+   los 7 días. Si hace falta, *Refresh All* a mano.
+
+Para ver si la compilación ha ido bien: pestaña **Actions** del repositorio (verde = hay .ipa nuevo).
+Si sale en rojo, el paso "Compilar para iPhone" muestra los errores. Para compilar sin cambios de
+código o pasar los tests: Actions > *Build IPA* > **Run workflow** (casilla de tests opcional).
+
+Minutos: los repositorios privados tienen un cupo mensual gratuito de GitHub Actions y los Mac
+gastan minutos más rápido que Linux. Cada compilación tarda unos minutos; los cambios solo de
+documentación no compilan.
+
 ## Estructura
 
 ```
 project.yml      definición del proyecto (XcodeGen genera NutriClone.xcodeproj)
+.github/         compilación automática del .ipa en GitHub Actions
 App/             arranque y pestañas
 Core/            modelos SwiftData, cálculo nutricional, carga de alimentos (BEDCA, foods.json, CSV)
 DesignSystem/    colores, espaciados y componentes
